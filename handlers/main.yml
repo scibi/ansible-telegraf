@@ -1,0 +1,7 @@
+---
+# handlers file for debops.telegraf
+
+- name: Restart telegraf
+  service:
+    name: telegraf
+    state: restarted

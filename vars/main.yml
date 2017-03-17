@@ -1,0 +1,7 @@
+---
+# vars file for debops.telegraf
+
+debops_telegraf__default_repo: 'deb https://repos.influxdata.com/debian jessie stable'
+debops_telegraf__default_repo_key: 'https://repos.influxdata.com/influxdb.key'
+
+debops_telegraf__base_packages: [ 'telegraf' ]

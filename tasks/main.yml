@@ -1,0 +1,20 @@
+---
+# tasks file for debops.telegraf
+
+- name: Ensure telegraf packages are installed
+  apt:
+    name: '{{ debops_telegraf__base_packages }}'
+    state: latest
+
+- name: Enable telegraf service
+  service:
+    name: telegraf
+    enabled: yes
+    state: started
+
+- name: Configure Telegraf
+  template:
+    src: 'etc/telegraf/telegraf.conf.j2'
+    dest: '/etc/telegraf/telegraf.conf'
+  notify:
+    - 'Restart telegraf'

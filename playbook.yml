@@ -1,0 +1,14 @@
+---
+# vim:ft=ansible:
+
+- hosts: debops_service_telegraf
+  become: True
+  roles:
+    - role: debops.influxdb
+      influxdb_server: '{{ telegraf__influxdb_server }}'
+      influxdb_users:
+        - user: '{{ telegraf__influxdb_user }}'
+      tags: [ 'role::influxdb' ]
+
+    - role: debops.telegraf
+      tags: [ 'role::telegraf' ]

@@ -1,0 +1,9 @@
+---
+# defaults file for debops.telegraf
+
+telegraf__influxdb_server: "influxdb.{{ ansible_domain }}"
+telegraf__influxdb_user: 'telegraf'
+
+debops_telegraf__influxdb_urls: [ "https://{{ telegraf__influxdb_server }}:8086" ]
+
+debops_telegraf__input_plugins: []
