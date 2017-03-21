@@ -3,6 +3,9 @@
 
 telegraf__influxdb_server: "influxdb.{{ ansible_domain }}"
 telegraf__influxdb_user: 'telegraf'
+telegraf__influxdb_password_path: "{{ secret + '/influxdb/' + ansible_local['influxdb'].delegate_to + '/' + '/credentials/' + telegraf__influxdb_user + '/password' }}"
+telegraf__influxdb_password: "{{ lookup('password', telegraf__influxdb_password_path + ' length=20') }}"
+telegraf__influxdb_database: 'telegraf'
 
 debops_telegraf__influxdb_urls: [ "https://{{ telegraf__influxdb_server }}:8086" ]
 

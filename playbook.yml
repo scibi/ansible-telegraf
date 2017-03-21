@@ -5,9 +5,15 @@
   become: True
   roles:
     - role: debops.influxdb
-      influxdb_server: '{{ telegraf__influxdb_server }}'
-      influxdb_users:
+      influxdb__server: '{{ telegraf__influxdb_server }}'
+      influxdb__users:
         - user: '{{ telegraf__influxdb_user }}'
+      influxdb__databases:
+        - database: '{{ telegraf__influxdb_database }}'
+      influxdb__premissions:
+        - user: '{{ telegraf__influxdb_user }}'
+          database: '{{ telegraf__influxdb_database }}'
+          premissions: 'ALL'
       tags: [ 'role::influxdb' ]
 
     - role: debops.telegraf
