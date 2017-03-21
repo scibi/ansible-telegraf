@@ -1,11 +1,6 @@
 ---
 # tasks file for debops.telegraf
 
-#- debug:
-#    var: telegraf__influxdb_password_path
-
-#- fail:
-
 - name: Ensure telegraf packages are installed
   apt:
     name: '{{ debops_telegraf__base_packages }}'
