@@ -3,7 +3,9 @@
 
 - hosts: debops_service_telegraf
   become: True
+
   roles:
+    - role: debops.telegraf/env
     - role: debops.influxdb
       influxdb__server: '{{ telegraf__influxdb_server }}'
       influxdb__users:
@@ -16,5 +18,15 @@
           premissions: 'ALL'
       tags: [ 'role::influxdb' ]
 
+- hosts: debops_service_telegraf
+  become: True
+
+  environment: '{{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}'
+
+  roles:
+    - role: debops.secret
+      tags: [ 'role::secret', 'role::telegraf' ]
     - role: debops.telegraf
       tags: [ 'role::telegraf' ]
