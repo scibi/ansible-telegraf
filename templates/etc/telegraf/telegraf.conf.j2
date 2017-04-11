@@ -67,7 +67,7 @@
   # cluster, this means that only ONE of the urls will be written to each interval.
   # urls = ["udp://localhost:8089"] # UDP endpoint example
   urls = [
-  {% for influxdb_host in debops_telegraf__influxdb_urls %}
+  {% for influxdb_host in telegraf__influxdb_urls %}
     "{{ influxdb_host }}",
   {% endfor %}
   ] # required
@@ -88,6 +88,13 @@
   # user_agent = "telegraf"
   # Set UDP payload size, defaults to InfluxDB UDP Client default (512 bytes)
   # udp_payload = 512
+
+  ## Optional SSL Config
+  # ssl_ca = "/etc/telegraf/ca.pem"
+  # ssl_cert = "/etc/telegraf/cert.pem"
+  # ssl_key = "/etc/telegraf/key.pem"
+  ## Use SSL but skip chain & host verification
+  insecure_skip_verify = {{ telegraf__influxdb_skip_verify|d(False)|bool|lower }}
 
 
 ###############################################################################
@@ -138,7 +145,7 @@
 ###############################################################################
 #                              SERVICE INPUTS                                 #
 ###############################################################################
-{% for plugin in debops_telegraf__input_plugins %}
+{% for plugin in telegraf__input_plugins %}
 [[inputs.{{ plugin.name }}]]
 {{ plugin.options|d() }}
 {% endfor %}
