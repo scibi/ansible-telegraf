@@ -141,6 +141,13 @@
 [[inputs.system]]
   # no configuration
 
+# Gather metrics about network interfaces
+[[inputs.net]]
+  ## By default, telegraf gathers stats from any up interface (excluding loopback)
+  ## Setting interfaces will tell it to gather these explicit interfaces,
+  ## regardless of status.
+  ##
+  # interfaces = ["eth0"]
 
 ###############################################################################
 #                              SERVICE INPUTS                                 #
