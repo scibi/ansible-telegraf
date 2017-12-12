@@ -1,7 +1,8 @@
 ---
 # vim:ft=ansible:
 
-- hosts: debops_service_telegraf
+- name: Prepare InfluxDB account
+  hosts: 'debops_service_telegraf'
   become: True
 
   roles:
@@ -18,7 +19,8 @@
           premissions: 'ALL'
       tags: [ 'role::influxdb' ]
 
-- hosts: debops_service_telegraf
+- name: Manage Telegraf
+  hosts: 'debops_service_telegraf'
   become: True
 
   environment: '{{ inventory__environment | d({})
@@ -28,5 +30,9 @@
   roles:
     - role: debops.secret
       tags: [ 'role::secret', 'role::telegraf' ]
+    - role: debops.influxdata
+      tags: [ 'role::influxdata' ]
+      influxdata__dependent_packages:
+        - '{{ telegraf__influxdata__dependent_packages }}'
     - role: debops.telegraf
       tags: [ 'role::telegraf' ]

@@ -1,11 +1,6 @@
 ---
 # tasks file for debops.telegraf
 
-- name: Ensure telegraf packages are installed
-  apt:
-    name: '{{ debops_telegraf__base_packages }}'
-    state: latest
-
 - name: Enable telegraf service
   service:
     name: telegraf

@@ -1,5 +1,45 @@
 ---
-# defaults file for debops.telegraf
+# .. vim: foldmarker=[[[,]]]:foldmethod=marker
+
+# debops.telegraf default variables [[[
+# =====================================
+
+# APT packages, version [[[
+# -------------------------
+
+# The ``debops.telegraf`` role uses the ``debops.influxdata`` Ansible role
+# to configure the InfluxData APT repositories and install the packages.
+
+# .. envvar:: telegraf__base_packages [[[
+#
+# List of base APT packages to install.
+telegraf__base_packages: [ 'telegraf' ]
+
+                                                                   # ]]]
+# .. envvar:: telegraf__packages [[[
+#
+# List of additional APT packages to install with Elasticsearch.
+telegraf__packages: []
+
+                                                                   # ]]]
+                                                                   # ]]]
+
+# Configuration for other Ansible roles [[[
+# -----------------------------------------
+
+# .. envvar:: telegraf__influxdata__dependent_packages [[[
+#
+# Configuration for the ``debops.influxdata`` Ansible role.
+telegraf__influxdata__dependent_packages:
+  - '{{ telegraf__base_packages }}'
+  - '{{ telegraf__packages }}'
+
+                                                                   # ]]]
+                                                                   # ]]]
+                                                                   # ]]]
+
+# FIXME FIXME FIXME FIXME FIXME FIXME
+# Opisać poniższe zmienne
 
 telegraf__influxdb_server: "influxdb.{{ ansible_domain }}"
 telegraf__influxdb_user: 'telegraf'
@@ -10,3 +50,59 @@ telegraf__influxdb_skip_verify: False
 telegraf__influxdb_urls: [ "https://{{ telegraf__influxdb_server }}:8086" ]
 
 telegraf__input_plugins: []
+
+
+telegraf__rabbitmq_installed: '{{ True
+                                if (ansible_local|d() and ansible_local.rabbitmq_server|d() and
+                                    ansible_local.rabbitmq_server.installed|d() and
+                                    ansible_local.rabbitmq_server.installed|bool)
+                                else False }}'
+
+telegraf__postfix_installed: '{{ True
+                                if (ansible_local|d() and ansible_local.postfix|d() and
+                                    ansible_local.postfix.installed|d() and
+                                    ansible_local.postfix.installed|bool)
+                                else False }}'
+
+telegraf__default_inputs:
+  - name: 'rabbitmq'
+    present: '{{ telegraf__rabbitmq_installed}}'
+    configuration: |
+      ## Management Plugin url. (default: http://localhost:15672)
+      # url = "http://localhost:15672"
+      ## Tag added to rabbitmq_overview series; deprecated: use tags
+      # name = "rmq-server-1"
+      ## Credentials
+      # username = "guest"
+      # password = "guest"
+    
+      ## Optional SSL Config
+      # ssl_ca = "/etc/telegraf/ca.pem"
+      # ssl_cert = "/etc/telegraf/cert.pem"
+      # ssl_key = "/etc/telegraf/key.pem"
+      ## Use SSL but skip chain & host verification
+      # insecure_skip_verify = false
+    
+      ## Optional request timeouts
+      ##
+      ## ResponseHeaderTimeout, if non-zero, specifies the amount of time to wait
+      ## for a server's response headers after fully writing the request.
+      # header_timeout = "3s"
+      ##
+      ## client_timeout specifies a time limit for requests made by this client.
+      ## Includes connection time, any redirects, and reading the response body.
+      # client_timeout = "4s"
+    
+      ## A list of nodes to gather as the rabbitmq_node measurement. If not
+      ## specified, metrics for all nodes are gathered.
+      # nodes = ["rabbit@node1", "rabbit@node2"]
+    
+      ## A list of queues to gather as the rabbitmq_queue measurement. If not
+      ## specified, metrics for all queues are gathered.
+      # queues = ["telegraf"]
+  - name: 'postfix'
+    present: '{{ telegraf__postfix_installed }}'
+    configuration: |
+      ## Postfix queue directory. If not provided, telegraf will try to use
+      #  ## 'postconf -h queue_directory' to determine it.
+      #    # queue_directory = "/var/spool/postfix"

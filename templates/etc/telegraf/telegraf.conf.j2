@@ -156,3 +156,11 @@
 [[inputs.{{ plugin.name }}]]
 {{ plugin.options|d() }}
 {% endfor %}
+
+# Nowy kod
+{% for input in telegraf__default_inputs %}
+{%   if input.present %}
+[[inputs.{{ input.name }}]]
+{{ input.configuration|d() }}
+{%   endif %}
+{% endfor %}
