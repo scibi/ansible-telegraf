@@ -64,6 +64,27 @@ telegraf__postfix_installed: '{{ True
                                     ansible_local.postfix.installed|bool)
                                 else False }}'
 
+telegraf__nginx_enabled: '{{ True
+                                if (ansible_local|d() and ansible_local.nginx|d() and
+                                    ansible_local.nginx.enabled|d() and
+                                    ansible_local.nginx.enabled|bool)
+                                else False }}'
+telegraf__redis_installed: '{{ True
+                                if (ansible_local|d() and ansible_local.redis|d() and
+                                    ansible_local.redis.installed|d() and
+                                    ansible_local.redis.installed|bool)
+                                else False }}'
+telegraf__redis_password: '{{ ansible_local.redis.password
+                                if (ansible_local|d() and ansible_local.redis|d() and
+                                        ansible_local.redis.password|d())
+                                else "" }}'
+
+telegraf__ntp_configured: '{{ True
+                                if (ansible_local|d() and ansible_local.ntp|d() and
+                                    ansible_local.ntp.configured|d() and
+                                    ansible_local.ntp.configured|bool)
+                                else False }}'
+
 telegraf__default_inputs:
   - name: 'rabbitmq'
     present: '{{ telegraf__rabbitmq_installed}}'
@@ -106,3 +127,25 @@ telegraf__default_inputs:
       ## Postfix queue directory. If not provided, telegraf will try to use
       #  ## 'postconf -h queue_directory' to determine it.
       #    # queue_directory = "/var/spool/postfix"
+  - name: 'nginx'
+    present: '{{ telegraf__nginx_enabled }}'
+    configuration: |
+      # An array of Nginx stub_status URI to gather stats.
+      urls = ["http://localhost/nginx_status"]
+  - name: 'redis'
+    present: '{{ telegraf__redis_installed }}'
+    configuration: |
+      ## specify servers via a url matching:
+      ##  [protocol://][:password]@address[:port]
+      ##  e.g.
+      ##    tcp://localhost:6379
+      ##    tcp://:password@192.168.99.100
+      ##
+      ## If no servers are specified, then localhost is used as the host.
+      ## If no port is specified, 6379 is used
+      servers = ["tcp://:{{ telegraf__redis_password }}@localhost:6379"]
+  - name: 'ntpq'
+    present: '{{ telegraf__ntp_configured }}'
+    configuration: |
+      ## If false, set the -n ntpq flag. Can reduce metric gather times.
+      dns_lookup = true
