@@ -8,7 +8,7 @@
   roles:
     - role: debops.telegraf/env
       when:
-        telegraf__output_influxdb == True
+        telegraf__influxdb_enable == True
     - role: debops.influxdb
       influxdb__server: '{{ telegraf__influxdb_server }}'
       influxdb__users:
@@ -21,7 +21,7 @@
           premissions: 'ALL'
       tags: [ 'role::influxdb' ]
       when:
-        telegraf__output_influxdb == True
+        telegraf__influxdb_enable == True
 
 - name: Manage Telegraf
   hosts: 'debops_service_telegraf'
@@ -39,7 +39,7 @@
       influxdata__dependent_packages:
         - '{{ telegraf__influxdata__dependent_packages }}'
       when:
-        telegraf__output_influxdb == True
+        telegraf__influxdb_enable == True
     - role: debops.telegraf
       tags: [ 'role::telegraf' ]
       

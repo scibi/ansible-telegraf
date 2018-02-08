@@ -60,7 +60,7 @@
 #                                  OUTPUTS                                    #
 ###############################################################################
 
-{% if telegraf__output_influxdb %}
+{% if telegraf__influxdb_enable %}
 # Configuration for influxdb server to send metrics to
 [[outputs.influxdb]]
   # The full HTTP or UDP endpoint URL for your InfluxDB instance.
