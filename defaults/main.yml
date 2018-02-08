@@ -149,3 +149,21 @@ telegraf__default_inputs:
     configuration: |
       ## If false, set the -n ntpq flag. Can reduce metric gather times.
       dns_lookup = true
+
+
+# support MQTT
+
+telegraf__output_influxdb: True
+telegraf__output_mqtt: False
+telegraf__mqtt_servers: 
+    - host: "127.0.0.1"
+      port: "1883"
+    - host: "127.0.0.2"
+      port: "8883"
+
+telegraf__mqtt_topic_prefix: "default_topic_prefix"
+telegraf__mqtt_data_format: "influx"
+
+
+
+
