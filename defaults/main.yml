@@ -41,6 +41,7 @@ telegraf__influxdata__dependent_packages:
 # FIXME FIXME FIXME FIXME FIXME FIXME
 # Opisać poniższe zmienne
 
+telegraf__influxdb_enable: True
 telegraf__influxdb_server: "influxdb.{{ ansible_domain }}"
 telegraf__influxdb_user: 'telegraf'
 telegraf__influxdb_password_path: "{{ secret + '/influxdb/' + ansible_local['influxdb'].delegate_to + '/' + '/credentials/' + telegraf__influxdb_user + '/password' }}"
@@ -84,6 +85,15 @@ telegraf__ntp_configured: '{{ True
                                     ansible_local.ntp.configured|d() and
                                     ansible_local.ntp.configured|bool)
                                 else False }}'
+
+# MQTT Consumer
+telegraf__mqtt_consumer_configured: False
+telegraf__mqtt_consumer_url: "localhost:1883"
+telegraf__mqtt_consumer_qos: "0"
+telegraf__mqtt_consumer_topic: "default/#"
+telegraf__mqtt_consumer_id: "{{ inventory_hostname_short }}"
+telegraf__mqtt_consumer_ca: "/etc/telegraf/ca.pem"
+
 
 telegraf__default_inputs:
   - name: 'rabbitmq'
@@ -149,3 +159,61 @@ telegraf__default_inputs:
     configuration: |
       ## If false, set the -n ntpq flag. Can reduce metric gather times.
       dns_lookup = true
+  - name: 'mqtt_consumer'
+    present: '{{ telegraf__mqtt_consumer_configured }}'
+    configuration: |
+      ## MQTT broker URLs to be used. The format should be scheme://host:port,
+      ## schema can be tcp, ssl, or ws.
+      servers = ["{{ telegraf__mqtt_consumer_url }}"]
+      ## MQTT QoS, must be 0, 1, or 2
+      qos = {{ telegraf__mqtt_consumer_qos }}
+
+      ## Connection timeout for initial connection in seconds
+      connection_timeout = "30s"
+
+      ## Topics to subscribe to
+      topics = [
+        "{{ telegraf__mqtt_consumer_topic }}"
+      ]
+
+      # if true, messages that can't be delivered while the subscriber is offline
+      # will be delivered when it comes back (such as on service restart).
+      # NOTE: if true, client_id MUST be set
+      persistent_session = true
+      # If empty, a random client ID will be generated.
+      client_id = "{{ telegraf__mqtt_consumer_id }}"
+
+      ## username and password to connect MQTT server.
+      # username = "telegraf"
+      # password = "metricsmetricsmetricsmetrics"
+
+      ## Optional SSL Config
+      ssl_ca = "{{ telegraf__mqtt_consumer_ca }}"
+      # ssl_cert = "/etc/telegraf/cert.pem"
+      # ssl_key = "/etc/telegraf/key.pem"
+      ## Use SSL but skip chain & host verification
+      # insecure_skip_verify = false
+
+      ## Data format to consume.
+      ## Each data format has its own unique set of configuration options, read
+      ## more about them here:
+      ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
+      data_format = "influx"
+ 
+
+
+# support MQTT output
+
+telegraf__output_mqtt: False
+telegraf__mqtt_servers: 
+    - host: "127.0.0.1"
+      port: "1883"
+    - host: "127.0.0.2"
+      port: "8883"
+
+telegraf__mqtt_topic_prefix: "default_topic_prefix"
+telegraf__mqtt_data_format: "influx"
+
+
+
+
