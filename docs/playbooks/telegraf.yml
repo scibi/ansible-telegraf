@@ -38,8 +38,6 @@
       tags: [ 'role::influxdata' ]
       influxdata__dependent_packages:
         - '{{ telegraf__influxdata__dependent_packages }}'
-      when:
-        telegraf__influxdb_enable == True
     - role: debops.telegraf
       tags: [ 'role::telegraf' ]
       
