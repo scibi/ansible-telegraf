@@ -60,6 +60,7 @@
 #                                  OUTPUTS                                    #
 ###############################################################################
 
+{% if telegraf__influxdb_enable %}
 # Configuration for influxdb server to send metrics to
 [[outputs.influxdb]]
   # The full HTTP or UDP endpoint URL for your InfluxDB instance.
@@ -95,6 +96,15 @@
   # ssl_key = "/etc/telegraf/key.pem"
   ## Use SSL but skip chain & host verification
   insecure_skip_verify = {{ telegraf__influxdb_skip_verify|d(False)|bool|lower }}
+{% endif %}
+
+{% if telegraf__output_mqtt %}
+[[outputs.mqtt]]
+  servers = [ {% for item in telegraf__mqtt_servers %}{% if loop.index != 1 %}","{% endif %} "{{ item.host }}:{{ item.port }}" {% endfor %} ]
+  topic_prefix = "{{ telegraf__mqtt_topic_prefix }}"
+  data_format = "{{ telegraf__mqtt_data_format }}"
+
+{% endif %}
 
 
 ###############################################################################
