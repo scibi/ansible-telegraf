@@ -95,14 +95,14 @@ telegraf__mqtt_consumer_id: "{{ inventory_hostname_short }}"
 telegraf__mqtt_consumer_ca: "/etc/telegraf/ca.pem"
 
 # logparser variables
-telegraf__logparser_configured: False
-telegraf__logparser_files: "[ '/var/log/nginx/welcome_access.log' ]"
+telegraf__logparser_enabled: False
+telegraf__logparser_files: [ "/var/log/nginx/welcome_access.log" , "/var/log/nginx/access.log" ,  "/var/log/nginx/access2.log"  ]
 telegraf__logparser_read_from_beginning: false
 telegraf__logparser_watch_method: "inotify"
-telegraf__logparser_patterns: "[ '%{COMMON_LOG_FORMAT}' ]"
+telegraf__logparser_patterns: [ "%{COMMON_LOG_FORMAT}" ]
 telegraf__logparser_measurement_name: "nginx_access_log"
 telegraf__logparser_pattern_files: []
-telegraf__logparser_timezone: "Europe/Warsaw"
+telegraf__logparser_timezone: "Local"
 
 telegraf__default_inputs:
   - name: 'rabbitmq'
@@ -209,7 +209,7 @@ telegraf__default_inputs:
       ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
       data_format = "influx"
   - name: 'logparser'
-    present: '{{ telegraf__logparser_configured }}'
+    present: '{{ telegraf__logparser_enabled }}'
     configuration: |
       ## Log files to parse.
       ## These accept standard unix glob matching rules, but with the addition of
@@ -217,7 +217,7 @@ telegraf__default_inputs:
       ##   /var/log/**.log     -> recursively find all .log files in /var/log
       ##   /var/log/*/*.log    -> find all .log files with a parent dir in /var/log
       ##   /var/log/apache.log -> only tail the apache log file
-      files = {{ telegraf__logparser_files }}
+      files = [ {% for item in telegraf__logparser_files %} {% if loop.index > 1 %},{% endif %} "{{ item }}" {% endfor %} ]
 
       ## Read files that currently exist from the beginning. Files that are created
       ## while telegraf is running (and that match the "files" globs) will always
@@ -235,7 +235,7 @@ telegraf__default_inputs:
         ## Other common built-in patterns are:
         ##   %{COMMON_LOG_FORMAT}   (plain apache & nginx access logs)
         ##   %{COMBINED_LOG_FORMAT} (access logs + referrer & agent)
-        patterns = {{ telegraf__logparser_patterns }}
+        pattern = [ {% for item in telegraf__logparser_patterns %} {% if loop.index > 1 %},{% endif %} "{{ item }}" {% endfor %} ]
 
         ## Name of the outputted measurement name.
         measurement = "{{ telegraf__logparser_measurement_name }}"
