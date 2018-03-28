@@ -96,7 +96,7 @@ telegraf__mqtt_consumer_ca: "/etc/telegraf/ca.pem"
 
 # logparser variables
 telegraf__logparser_enabled: False
-telegraf__logparser_files: [ "/var/log/nginx/welcome_access.log" , "/var/log/nginx/access.log" ,  "/var/log/nginx/access2.log"  ]
+telegraf__logparser_files: [ "/var/log/nginx/welcome_access.log" ]
 telegraf__logparser_read_from_beginning: false
 telegraf__logparser_watch_method: "inotify"
 telegraf__logparser_patterns: [ "%{COMMON_LOG_FORMAT}" ]
