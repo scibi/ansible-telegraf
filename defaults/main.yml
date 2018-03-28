@@ -242,7 +242,7 @@ telegraf__default_inputs:
 
         ## Full path(s) to custom pattern files.
         #custom_pattern_files = []
-        custom_pattern_files = {{ telegraf__logparser_pattern_files }}
+        custom_pattern_files = [ {% for item in telegraf__logparser_pattern_files %} {% if loop.index > 1 %},{% endif %} "{{ item }}" {% endfor %} ]
 
         ## Custom patterns can also be defined here. Put one pattern per line.
         #custom_patterns = '''
