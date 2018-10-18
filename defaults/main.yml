@@ -41,14 +41,6 @@ telegraf__influxdata__dependent_packages:
 # FIXME FIXME FIXME FIXME FIXME FIXME
 # Opisać poniższe zmienne
 
-telegraf__influxdb_enable: True
-telegraf__influxdb_server: "influxdb.{{ ansible_domain }}"
-telegraf__influxdb_user: 'telegraf'
-telegraf__influxdb_password_path: "{{ secret + '/influxdb/' + ansible_local['influxdb'].delegate_to + '/' + '/credentials/' + telegraf__influxdb_user + '/password' }}"
-telegraf__influxdb_password: "{{ lookup('password', telegraf__influxdb_password_path + ' length=20') }}"
-telegraf__influxdb_database: 'telegraf'
-telegraf__influxdb_skip_verify: False        
-telegraf__influxdb_urls: [ "https://{{ telegraf__influxdb_server }}:8086" ]
 
 telegraf__input_plugins: []
 
@@ -86,57 +78,75 @@ telegraf__ntp_configured: '{{ True
                                     ansible_local.ntp.configured|bool)
                                 else False }}'
 
-# MQTT Consumer
-telegraf__mqtt_consumer_configured: False
-telegraf__mqtt_consumer_url: "localhost:1883"
-telegraf__mqtt_consumer_qos: "0"
-telegraf__mqtt_consumer_topic: "default/#"
-telegraf__mqtt_consumer_id: "{{ inventory_hostname_short }}"
-telegraf__mqtt_consumer_ca: "/etc/telegraf/ca.pem"
+# rabbitmq
+telegraf__inputs_rabbitmq_username: 'telegraf_monitoring'
+telegraf__inputs_rabbitmq_password_path: "{{ secret + '/rabbitmq_server/accounts/' + telegraf__inputs_rabbitmq_username + '/password' }}"
+telegraf__inputs_rabbitmq_password: "{{ lookup('password', telegraf__inputs_rabbitmq_password_path + ' length=20') }}"
+telegraf__inputs_rabbitmq_options: ''
 
+# mqtt_consumer
+telegraf__inputs_mqtt_consumer_enabled: False
+telegraf__inputs_mqtt_consumer_servers:
+  - 'localhost:1883'
+telegraf__inputs_mqtt_consumer_qos: 0
+telegraf__inputs_mqtt_consumer_topics:
+  - 'default/#'
+telegraf__inputs_mqtt_consumer_client_id: "{{ inventory_hostname_short }}"
+telegraf__inputs_mqtt_consumer_options: ''
+
+# amqp_consumer
+telegraf__inputs_amqp_consumer_brokers:
+  - 'amqp://localhost:5672/telegraf'
+telegraf__inputs_amqp_consumer_enabled: False
+telegraf__inputs_amqp_consumer_username: 'telegraf'
+telegraf__inputs_amqp_consumer_password_path: "{{ secret + '/rabbitmq_server/accounts/' + telegraf__inputs_amqp_consumer_username + '/password' }}"
+telegraf__inputs_amqp_consumer_password: "{{ lookup('password', telegraf__inputs_amqp_consumer_password_path + ' length=20') }}"
+telegraf__inputs_amqp_consumer_options: ''
 
 telegraf__default_inputs:
+# Read metrics about cpu usage
+  - name: 'cpu'
+    configuration: |
+      # Whether to report per-cpu stats or not
+      percpu = true
+      # Whether to report total system cpu stats or not
+      totalcpu = true
+      # Comment this line if you want the raw CPU time metrics
+      fielddrop = ["time_*"]
+
+  - name: 'disk'
+    configuration: |
+      # Ignore some mountpoints by filesystem type. For example (dev)tmpfs (usually
+      # present on /run, /var/run, /dev/shm or /dev).
+      ignore_fs = ["tmpfs", "devtmpfs"]
+
+  - name: 'diskio'
+
+  - name: 'mem'
+
+  - name: 'swap'
+
+  - name: 'system'
+
+  - name: 'net'
+
   - name: 'rabbitmq'
     present: '{{ telegraf__rabbitmq_installed}}'
     configuration: |
       ## Management Plugin url. (default: http://localhost:15672)
-      # url = "http://localhost:15672"
-      ## Tag added to rabbitmq_overview series; deprecated: use tags
-      # name = "rmq-server-1"
+      url = "http://localhost:15672"
       ## Credentials
-      # username = "guest"
-      # password = "guest"
+      username = "{{ telegraf__inputs_rabbitmq_username }}"
+      password = "{{ telegraf__inputs_rabbitmq_password }}"
     
-      ## Optional SSL Config
-      # ssl_ca = "/etc/telegraf/ca.pem"
-      # ssl_cert = "/etc/telegraf/cert.pem"
-      # ssl_key = "/etc/telegraf/key.pem"
-      ## Use SSL but skip chain & host verification
-      # insecure_skip_verify = false
-    
-      ## Optional request timeouts
-      ##
-      ## ResponseHeaderTimeout, if non-zero, specifies the amount of time to wait
-      ## for a server's response headers after fully writing the request.
-      # header_timeout = "3s"
-      ##
-      ## client_timeout specifies a time limit for requests made by this client.
-      ## Includes connection time, any redirects, and reading the response body.
-      # client_timeout = "4s"
-    
-      ## A list of nodes to gather as the rabbitmq_node measurement. If not
-      ## specified, metrics for all nodes are gathered.
-      # nodes = ["rabbit@node1", "rabbit@node2"]
-    
-      ## A list of queues to gather as the rabbitmq_queue measurement. If not
-      ## specified, metrics for all queues are gathered.
-      # queues = ["telegraf"]
+      {{ telegraf__inputs_rabbitmq_options }}
+
   - name: 'postfix'
     present: '{{ telegraf__postfix_installed }}'
     configuration: |
       ## Postfix queue directory. If not provided, telegraf will try to use
-      #  ## 'postconf -h queue_directory' to determine it.
-      #    # queue_directory = "/var/spool/postfix"
+      ## 'postconf -h queue_directory' to determine it.
+      # queue_directory = "/var/spool/postfix"
   - name: 'nginx'
     present: '{{ telegraf__nginx_enabled }}'
     configuration: |
@@ -159,39 +169,39 @@ telegraf__default_inputs:
     configuration: |
       ## If false, set the -n ntpq flag. Can reduce metric gather times.
       dns_lookup = true
+
   - name: 'mqtt_consumer'
-    present: '{{ telegraf__mqtt_consumer_configured }}'
+    present: '{{ telegraf__inputs_mqtt_consumer_enabled }}'
     configuration: |
       ## MQTT broker URLs to be used. The format should be scheme://host:port,
       ## schema can be tcp, ssl, or ws.
-      servers = ["{{ telegraf__mqtt_consumer_url }}"]
+      servers = [ "{{ telegraf__inputs_mqtt_consumer_servers | join('", "') }}" ]
       ## MQTT QoS, must be 0, 1, or 2
-      qos = {{ telegraf__mqtt_consumer_qos }}
+      qos = {{ telegraf__inputs_mqtt_consumer_qos }}
 
       ## Connection timeout for initial connection in seconds
       connection_timeout = "30s"
 
       ## Topics to subscribe to
-      topics = [
-        "{{ telegraf__mqtt_consumer_topic }}"
-      ]
+      topics = [ "{{ telegraf__inputs_mqtt_consumer_topics| join('", "') }}" ]
 
       # if true, messages that can't be delivered while the subscriber is offline
       # will be delivered when it comes back (such as on service restart).
       # NOTE: if true, client_id MUST be set
       persistent_session = true
+
       # If empty, a random client ID will be generated.
-      client_id = "{{ telegraf__mqtt_consumer_id }}"
+      client_id = "{{ telegraf__inputs_mqtt_consumer_client_id }}"
 
       ## username and password to connect MQTT server.
       # username = "telegraf"
       # password = "metricsmetricsmetricsmetrics"
 
-      ## Optional SSL Config
-      ssl_ca = "{{ telegraf__mqtt_consumer_ca }}"
-      # ssl_cert = "/etc/telegraf/cert.pem"
-      # ssl_key = "/etc/telegraf/key.pem"
-      ## Use SSL but skip chain & host verification
+      ## Optional TLS Config
+      # tls_ca = "/etc/telegraf/ca.pem"
+      # tls_cert = "/etc/telegraf/cert.pem"
+      # tls_key = "/etc/telegraf/key.pem"
+      ## Use TLS but skip chain & host verification
       # insecure_skip_verify = false
 
       ## Data format to consume.
@@ -199,21 +209,115 @@ telegraf__default_inputs:
       ## more about them here:
       ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
       data_format = "influx"
- 
+
+      {{ telegraf__inputs_mqtt_consumer_options }}
+
+  - name: 'amqp_consumer'
+    present: '{{ telegraf__inputs_amqp_consumer_enabled }}'
+    configuration: |
+      ## Brokers to consume from.  If multiple brokers are specified a random broker
+      ## will be selected anytime a connection is established.  This can be
+      ## helpful for load balancing when not using a dedicated load balancer.
+      brokers = [ "{{ telegraf__inputs_amqp_consumer_brokers | join('", "') }}" ]
+
+      ## Authentication credentials for the PLAIN auth_method.
+      username = "{{ telegraf__inputs_amqp_consumer_username }}"
+      password = "{{ telegraf__inputs_amqp_consumer_password }}"
+
+      ## Exchange to declare and consume from.
+      exchange = "telegraf"
+
+      ## AMQP queue name.
+      queue = "telegraf"
+
+      ## AMQP queue durability can be "transient" or "durable".
+      queue_durability = "durable"
+
+      ## Binding Key.
+      binding_key = "#"
+
+      ## Data format to consume.
+      ## Each data format has its own unique set of configuration options, read
+      ## more about them here:
+      ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
+      data_format = "influx"
+
+      {{ telegraf__inputs_amqp_consumer_options }}
 
 
-# support MQTT output
+# InfluxDB
+telegraf__outputs_influxdb_enabled: True
+telegraf__outputs_influxdb_server: "influxdb.{{ ansible_domain }}"
+telegraf__outputs_influxdb_urls: [ "https://{{ telegraf__outputs_influxdb_server }}:8086" ]
+telegraf__outputs_influxdb_user: 'telegraf'
+telegraf__outputs_influxdb_password_path: "{{ secret + '/influxdb/' + telegraf__outputs_influxdb_server + '/' + '/credentials/' + telegraf__outputs_influxdb_user + '/password' }}"
+telegraf__outputs_influxdb_password: "{% if telegraf__outputs_influxdb_enabled %}{{ lookup('password', telegraf__outputs_influxdb_password_path + ' length=20') }}{% endif %}"
+telegraf__outputs_influxdb_database: 'telegraf'
+telegraf__outputs_influxdb_options: ''
 
-telegraf__output_mqtt: False
-telegraf__mqtt_servers: 
-    - host: "127.0.0.1"
-      port: "1883"
-    - host: "127.0.0.2"
-      port: "8883"
+# MQTT
+telegraf__outputs_mqtt_enabled: False
+telegraf__outputs_mqtt_servers:
+  - 'localhost:1883'
+telegraf__outputs_mqtt_topic_prefix: 'telegraf'
+telegraf__outputs_mqtt_options: ''
 
-telegraf__mqtt_topic_prefix: "default_topic_prefix"
-telegraf__mqtt_data_format: "influx"
+#AMQP
+telegraf__outputs_amqp_enabled: False
+telegraf__outputs_amqp_borkers:
+  - 'amqp://localhost:5672/influxdb'
+telegraf__outputs_amqp_exchange: 'telegraf'
+telegraf__outputs_amqp_username: 'telegraf'
+telegraf__outputs_amqp_password_path: "{{ secret + '/rabbitmq_server/accounts/' + telegraf__outputs_amqp_username + '/password' }}"
+telegraf__outputs_amqp_password: "{{ lookup('password', telegraf__outputs_amqp_password_path + ' length=20') }}"
+telegraf__outputs_amqp_options: ''
 
+telegraf__default_outputs:
+  - name: 'influxdb'
+    present: '{{ telegraf__outputs_influxdb_enabled }}'
+    configuration: |
+      ## The full HTTP or UDP URL for your InfluxDB instance.
+      ##
+      ## Multiple URLs can be specified for a single cluster, only ONE of the
+      ## urls will be written to each interval.
+      urls = [ "{{ telegraf__outputs_influxdb_urls | join('", "') }}" ]
 
+      ## The target database for metrics; will be created as needed.
+      database = "{{ telegraf__outputs_influxdb_database }}"
 
+      ## Timeout for HTTP messages.
+      timeout = "5s"
 
+      ## HTTP Basic Auth
+      username = "{{ telegraf__outputs_influxdb_user }}"
+      password = "{{ telegraf__outputs_influxdb_password }}"
+
+      {{ telegraf__outputs_influxdb_options }}
+
+  - name: 'mqtt'
+    present: '{{ telegraf__outputs_mqtt_enabled }}'
+    configuration: |
+      servers = [ "{{ telegraf__outputs_mqtt_servers | join('", "') }}" ]
+
+      ## MQTT outputs send metrics to this topic format
+      ## "<topic_prefix>/<hostname>/<pluginname>/"
+      topic_prefix = "{{ telegraf__outputs_mqtt_topic_prefix }}"
+
+      {{ telegraf__outputs_mqtt_options }}
+
+  - name: 'amqp'
+    present: '{{ telegraf__outputs_amqp_enabled }}'
+    configuration: |
+      ## Brokers to publish to.  If multiple brokers are specified a random broker
+      ## will be selected anytime a connection is established.  This can be
+      ## helpful for load balancing when not using a dedicated load balancer.
+      brokers = [ "{{ telegraf__outputs_amqp_borkers | join('", "') }}" ]
+      
+      ## Exchange to declare and publish to.
+      exchange = "{{ telegraf__outputs_amqp_exchange }}"
+
+      ## Authentication credentials for the PLAIN auth_method.
+      username = "{{ telegraf__outputs_amqp_username }}"
+      password = "{{ telegraf__outputs_amqp_password }}"
+
+      {{ telegraf__outputs_amqp_options }}

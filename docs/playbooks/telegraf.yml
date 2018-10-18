@@ -7,21 +7,19 @@
 
   roles:
     - role: debops.telegraf/env
-      when:
-        telegraf__influxdb_enable == True
+      when: telegraf__outputs_influxdb_enabled
     - role: debops.influxdb
-      influxdb__server: '{{ telegraf__influxdb_server }}'
+      influxdb__server: '{{ telegraf__outputs_influxdb_server }}'
       influxdb__users:
-        - user: '{{ telegraf__influxdb_user }}'
+        - user: '{{ telegraf__outputs_influxdb_user }}'
       influxdb__databases:
-        - database: '{{ telegraf__influxdb_database }}'
+        - database: '{{ telegraf__outputs_influxdb_database }}'
       influxdb__premissions:
-        - user: '{{ telegraf__influxdb_user }}'
-          database: '{{ telegraf__influxdb_database }}'
+        - user: '{{ telegraf__outputs_influxdb_user }}'
+          database: '{{ telegraf__outputs_influxdb_database }}'
           premissions: 'ALL'
       tags: [ 'role::influxdb' ]
-      when:
-        telegraf__influxdb_enable == True
+      when: telegraf__outputs_influxdb_enabled
 
 - name: Manage Telegraf
   hosts: 'debops_service_telegraf'
